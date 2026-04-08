@@ -56,6 +56,46 @@ class Room {
         if (!player) throw new Error('Unknown player');
         player.isReady = ready;
     }
+
+    startGame(callerId) {
+        if (this.state !== ROOM_STATES.LOBBY) {
+            throw new Error(`Cannot start game from state ${this.state}`);
+        }
+        if (callerId !== this.hostId) {
+            throw new Error('Only the host can start the game');
+        }
+        if (this.players.size < 2) {
+            throw new Error('At least 2 players required');
+        }
+        this.turnOrder = Array.from(this.players.keys()).sort((a, b) => {
+            return this.players.get(a).joinedAt - this.players.get(b).joinedAt;
+        });
+        this.currentCallerIdx = 0;
+        this.currentRound = 1;
+        this.state = ROOM_STATES.CALLER_CHOOSING;
+    }
+
+    getCurrentCallerId() {
+        return this.turnOrder[this.currentCallerIdx];
+    }
+
+    setPrompt(callerId, text) {
+        if (this.state !== ROOM_STATES.CALLER_CHOOSING) {
+            throw new Error(`Cannot set prompt from state ${this.state}`);
+        }
+        if (callerId !== this.getCurrentCallerId()) {
+            throw new Error('Only the current caller can set the prompt');
+        }
+        this.currentPrompt = text;
+        this.roundEndsAt = Date.now() + 90_000;
+        this.submittedThisRound.clear();
+        this.state = ROOM_STATES.ROUND_ACTIVE;
+        this.promptHistory.push({
+            round: this.currentRound,
+            caller: callerId,
+            prompt: text,
+        });
+    }
 }
 
 module.exports = { Room, ROOM_STATES };
