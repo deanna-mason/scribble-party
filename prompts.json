@@ -1,0 +1,33 @@
+{
+  "body_parts": [
+    "fish tail", "mustache", "eyebrow", "third eye", "claw", "wing",
+    "horn", "antenna", "elephant trunk", "lizard tongue", "peg leg",
+    "bird beak", "dragon scales", "robot arm", "extra finger"
+  ],
+  "accessories": [
+    "top hat", "monocle", "cape", "backpack", "bow tie", "sunglasses",
+    "crown", "necklace", "belt", "scarf", "tiara", "watch",
+    "mittens", "boots", "baseball cap"
+  ],
+  "creatures": [
+    "dragon", "alien", "robot", "mermaid", "unicorn", "yeti",
+    "sea monster", "ghost", "vampire bat", "tiny dinosaur",
+    "fairy", "phoenix", "octopus", "kraken", "goblin"
+  ],
+  "silly": [
+    "spaghetti hair", "pizza shoes", "rainbow fart", "cheese necklace",
+    "pickle ears", "donut halo", "taco hands", "ice cream nose",
+    "bubblegum beard", "popcorn eyebrows", "waffle wings",
+    "marshmallow teeth", "candy cane legs", "jelly bean eyes", "cupcake hat"
+  ],
+  "nature": [
+    "flower", "tree branch", "lightning bolt", "cloud", "sun",
+    "rainbow", "snowflake", "puddle", "mushroom", "acorn",
+    "seashell", "starfish", "butterfly", "ladybug", "leaf"
+  ],
+  "objects": [
+    "ice cream cone", "umbrella", "balloon", "guitar", "rocket ship",
+    "treasure chest", "magnifying glass", "bucket", "spoon",
+    "alarm clock", "telescope", "sandwich", "cupcake", "key", "map"
+  ]
+}
