@@ -63,6 +63,22 @@
                 UI.renderMiniStatus();
                 break;
             }
+            case 'round_revealed':
+                UI.leaveRound();
+                UI.showScreen('REVEAL');
+                UI.enterReveal(payload);
+                break;
+            case 'reaction_received':
+                UI.showReactionOn(payload.targetPlayerId, payload.emoji);
+                break;
+            case 'done_vote_changed': {
+                const updatedPlayers = st.players.map((p) =>
+                    p.id === payload.playerId ? { ...p, isDoneVoting: payload.done } : p
+                );
+                AppState.set({ players: updatedPlayers });
+                UI.renderDoneButton();
+                break;
+            }
             case 'error':
                 UI.showToast(payload.message || 'Something went wrong');
                 break;
@@ -76,10 +92,12 @@
         UI.initLobby();
         UI.initCaller();
         UI.initRound();
+        UI.initReveal();
         const EVENTS = [
             'room_created', 'room_joined', 'player_joined', 'player_left',
             'player_ready_changed', 'game_started', 'caller_choosing',
             'random_prompt_suggestion', 'round_started', 'player_submitted',
+            'round_revealed', 'reaction_received', 'done_vote_changed',
             'error',
         ];
         for (const type of EVENTS) {

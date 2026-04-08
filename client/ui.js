@@ -295,8 +295,134 @@
         }
     }
 
+    // ---- Reveal ----
+    let selectedReactionTarget = null;
+
+    function initReveal() {
+        document.querySelectorAll('.emoji-btn').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const emoji = btn.dataset.emoji;
+                if (!selectedReactionTarget) {
+                    showToast('Tap a drawing first, then pick an emoji');
+                    return;
+                }
+                Socket.send('send_reaction', {
+                    targetPlayerId: selectedReactionTarget,
+                    emoji,
+                });
+            });
+        });
+        document.getElementById('btn-next-round').addEventListener('click', () => {
+            Socket.send('next_round', {});
+        });
+        document.getElementById('btn-toggle-done').addEventListener('click', handleDoneToggle);
+    }
+
+    function handleDoneToggle() {
+        const st = AppState.get();
+        const me = st.players.find((p) => p.id === st.playerId);
+        if (!me) return;
+        const nextDone = !me.isDoneVoting;
+        if (nextDone && !st.haveSeenDoneHelper) {
+            AppState.set({ haveSeenDoneHelper: true });
+        }
+        Socket.send('toggle_done_voting', { done: nextDone });
+    }
+
+    async function enterReveal(revealPayload) {
+        const st = AppState.get();
+        document.getElementById('reveal-round').textContent = revealPayload.round;
+        document.getElementById('reveal-prompt').textContent = `"${revealPayload.prompt}"`;
+        const grid = document.getElementById('reveal-grid');
+        grid.innerHTML = '';
+        selectedReactionTarget = null;
+
+        const cells = [];
+        for (const p of st.players) {
+            const cell = document.createElement('div');
+            cell.className = 'reveal-cell';
+            cell.dataset.playerId = p.id;
+            const name = document.createElement('div');
+            name.className = 'reveal-cell-name';
+            name.textContent = p.name;
+            const canvas = document.createElement('canvas');
+            const reactionsHolder = document.createElement('div');
+            reactionsHolder.className = 'reveal-reactions';
+            reactionsHolder.dataset.playerId = p.id;
+            cell.appendChild(name);
+            cell.appendChild(canvas);
+            cell.appendChild(reactionsHolder);
+            cell.addEventListener('click', () => {
+                selectedReactionTarget = p.id;
+                document.querySelectorAll('.reveal-cell').forEach((c) => {
+                    c.style.outline = c === cell ? `3px solid var(--accent)` : 'none';
+                });
+            });
+            grid.appendChild(cell);
+            cells.push({ canvas, playerId: p.id });
+        }
+
+        // Wait one frame so cells have layout
+        await new Promise((r) => requestAnimationFrame(r));
+        // Replay strokes on each cell
+        await Promise.all(cells.map(({ canvas, playerId }) => {
+            const base = (st.playerStrokes[playerId] || []).filter((s) => s.round < revealPayload.round);
+            const replay = revealPayload.playerStrokesThisRound[playerId] || [];
+            return Drawing.replayOn(canvas, replay, base);
+        }));
+
+        // Merge new strokes into AppState.playerStrokes.
+        // For self, pull directly from Drawing (source of truth for our own canvas)
+        // to avoid duplicating strokes we already have locally.
+        const updated = { ...st.playerStrokes };
+        for (const [pid, newStrokes] of Object.entries(revealPayload.playerStrokesThisRound)) {
+            if (pid === st.playerId) {
+                updated[pid] = Drawing.getStrokes();
+            } else {
+                updated[pid] = (updated[pid] || []).concat(newStrokes);
+            }
+        }
+        AppState.set({ playerStrokes: updated, roomState: 'REVEAL' });
+        renderDoneButton();
+    }
+
+    function showReactionOn(playerId, emoji) {
+        const holder = document.querySelector(`.reveal-reactions[data-player-id="${playerId}"]`);
+        if (!holder) return;
+        const el = document.createElement('div');
+        el.className = 'reaction-fly';
+        el.textContent = emoji;
+        const cell = holder.parentElement;
+        const rect = cell.getBoundingClientRect();
+        el.style.left = `${Math.random() * (rect.width - 40)}px`;
+        el.style.bottom = '0';
+        el.style.position = 'absolute';
+        cell.appendChild(el);
+        setTimeout(() => el.remove(), 1200);
+    }
+
+    function renderDoneButton() {
+        const st = AppState.get();
+        const me = st.players.find((p) => p.id === st.playerId);
+        if (!me) return;
+        const btn = document.getElementById('btn-toggle-done');
+        const helper = document.getElementById('done-helper');
+        const doneCount = st.players.filter((p) => p.isDoneVoting).length;
+        const needed = st.players.length - doneCount;
+        if (me.isDoneVoting) {
+            btn.classList.add('is-done');
+            btn.innerHTML = `✓ You're done`;
+            helper.textContent = needed > 0 ? `Waiting for ${needed} more` : 'All done!';
+        } else {
+            btn.classList.remove('is-done');
+            btn.innerHTML = `🏁 I'm done <span class="done-state">○</span>`;
+            helper.textContent = 'Game ends when everyone taps this';
+        }
+    }
+
     window.UI = {
         showScreen, showToast, initLanding, initLobby, renderLobby,
         initCaller, renderCaller, initRound, enterRound, leaveRound, renderMiniStatus,
+        initReveal, enterReveal, showReactionOn, renderDoneButton,
     };
 })();

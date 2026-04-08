@@ -327,3 +327,86 @@ input, select { font: inherit; }
     color: var(--muted);
 }
 .mini-status .mini-player.submitted { color: var(--success); font-weight: 700; }
+
+/* ===== Reveal ===== */
+.reveal-title { font-weight: 700; font-size: 1.2rem; }
+.reveal-prompt { color: var(--primary); font-weight: 700; margin-top: var(--space-xs); }
+.reveal-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-sm);
+    flex: 1;
+    min-height: 0;
+    padding: var(--space-sm) 0;
+}
+.reveal-cell {
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-md);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+}
+.reveal-cell-name {
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: var(--space-xs) var(--space-sm);
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+}
+.reveal-cell canvas {
+    flex: 1;
+    width: 100%;
+    display: block;
+}
+.reveal-reactions {
+    position: absolute;
+    bottom: var(--space-sm);
+    left: var(--space-sm);
+    display: flex;
+    gap: 2px;
+    flex-wrap: wrap;
+    max-width: 80%;
+    pointer-events: none;
+}
+.reaction-bar {
+    display: flex;
+    justify-content: center;
+    gap: var(--space-sm);
+    padding: var(--space-sm);
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-md);
+}
+.emoji-btn {
+    width: 48px;
+    height: 48px;
+    font-size: 1.5rem;
+    border-radius: var(--radius-sm);
+    background: var(--bg);
+}
+.reveal-actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    margin-top: var(--space-sm);
+}
+.done-block { text-align: center; }
+.btn-done.is-done {
+    background: var(--success);
+    color: white;
+    border-color: var(--success);
+}
+.done-helper { color: var(--muted); font-size: 0.8rem; margin-top: var(--space-xs); }
+.reaction-fly {
+    position: absolute;
+    font-size: 1.5rem;
+    pointer-events: none;
+    animation: fly 1.2s ease-out forwards;
+}
+@keyframes fly {
+    0% { opacity: 0; transform: translate(0, 20px) scale(0.6); }
+    20% { opacity: 1; transform: translate(0, 0) scale(1.2); }
+    100% { opacity: 0; transform: translate(0, -40px) scale(1); }
+}
