@@ -51,5 +51,73 @@
         });
     }
 
-    window.UI = { showScreen, showToast, initLanding };
+    // ---- Lobby ----
+    function initLobby() {
+        document.getElementById('btn-copy-code').addEventListener('click', async () => {
+            const code = AppState.get().roomCode;
+            if (!code) return;
+            try {
+                await navigator.clipboard.writeText(code);
+                showToast('Copied!');
+            } catch {
+                showToast(`Code: ${code}`);
+            }
+        });
+        document.getElementById('btn-ready').addEventListener('click', () => {
+            const me = AppState.get().players.find((p) => p.id === AppState.get().playerId);
+            if (!me) return;
+            Socket.send('set_ready', { ready: !me.isReady });
+        });
+        document.getElementById('btn-start-game').addEventListener('click', () => {
+            Socket.send('start_game', {});
+        });
+        document.getElementById('btn-leave-lobby').addEventListener('click', () => {
+            if (!confirm('Leave the room?')) return;
+            Socket.send('leave_room', {});
+            AppState.reset();
+            showScreen('LANDING');
+        });
+    }
+
+    function renderLobby() {
+        const st = AppState.get();
+        const codeEl = document.getElementById('btn-copy-code');
+        if (codeEl) codeEl.textContent = st.roomCode || '----';
+        document.getElementById('lobby-count').textContent = `(${st.players.length}/8)`;
+        const ul = document.getElementById('lobby-players');
+        ul.innerHTML = '';
+        for (const p of st.players) {
+            const li = document.createElement('li');
+            li.className = 'player-item';
+            const readyIcon = p.isReady ? '✓' : '○';
+            const readyClass = p.isReady ? '' : ' not-ready';
+            const hostBadge = p.id === st.hostId ? '<span class="player-badge">👑 host</span>' : '';
+            li.innerHTML = `
+                <span class="player-dot ${p.isConnected ? 'is-connected' : ''}"></span>
+                <span class="player-name">${escapeHtml(p.name)}</span>
+                ${hostBadge}
+                <span class="player-ready${readyClass}">${readyIcon}</span>
+            `;
+            ul.appendChild(li);
+        }
+        const me = st.players.find((p) => p.id === st.playerId);
+        const btnReady = document.getElementById('btn-ready');
+        if (me) {
+            btnReady.textContent = me.isReady ? '✓ Ready' : "I'm Ready";
+            btnReady.classList.toggle('is-active', me.isReady);
+        }
+        const btnStart = document.getElementById('btn-start-game');
+        const isHost = st.playerId === st.hostId;
+        const canStart = isHost && st.players.length >= 2;
+        btnStart.style.display = isHost ? '' : 'none';
+        btnStart.disabled = !canStart;
+    }
+
+    function escapeHtml(s) {
+        return String(s).replace(/[&<>"']/g, (c) => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        }[c]));
+    }
+
+    window.UI = { showScreen, showToast, initLanding, initLobby, renderLobby };
 })();
