@@ -180,5 +180,123 @@
         }
     }
 
-    window.UI = { showScreen, showToast, initLanding, initLobby, renderLobby, initCaller, renderCaller };
+    // ---- Round (drawing) ----
+    let timerInterval = null;
+    let wakeLock = null;
+
+    function initRound() {
+        // Color swatches
+        const swatchHolder = document.getElementById('color-swatches');
+        for (const color of Drawing.COLORS) {
+            const btn = document.createElement('button');
+            btn.className = 'color-swatch';
+            btn.dataset.color = color;
+            btn.style.background = color;
+            btn.setAttribute('aria-label', `Color ${color}`);
+            if (color === Drawing.COLORS[0]) btn.classList.add('is-active');
+            btn.addEventListener('click', () => {
+                Drawing.setColor(color);
+                document.querySelectorAll('.color-swatch').forEach((el) => {
+                    el.classList.toggle('is-active', el.dataset.color === color);
+                });
+            });
+            swatchHolder.appendChild(btn);
+        }
+        // Tool buttons
+        document.querySelectorAll('.tool-btn').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const tool = btn.dataset.tool;
+                Drawing.setTool(tool);
+                document.querySelectorAll('.tool-btn').forEach((b) => {
+                    b.classList.toggle('is-active', b === btn);
+                });
+            });
+        });
+        // Size buttons
+        document.querySelectorAll('.size-btn').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const size = parseInt(btn.dataset.size, 10);
+                Drawing.setSize(size);
+                document.querySelectorAll('.size-btn').forEach((b) => {
+                    b.classList.toggle('is-active', b === btn);
+                });
+            });
+        });
+        // Submit button
+        document.getElementById('btn-submit-round').addEventListener('click', () => {
+            const strokes = Drawing.getStrokes();
+            Socket.send('submit_round', { strokes });
+            document.getElementById('btn-submit-round').disabled = true;
+        });
+        // Canvas init
+        Drawing.init(document.getElementById('draw-canvas'));
+    }
+
+    async function enterRound() {
+        const st = AppState.get();
+        document.getElementById('round-number').textContent = st.currentRound;
+        document.getElementById('round-prompt').textContent = `"${st.currentPrompt}"`;
+        Drawing.setRound(st.currentRound);
+        // Load cumulative strokes for me from state
+        const myStrokes = (st.playerStrokes[st.playerId] || []).slice();
+        Drawing.setStrokes(myStrokes);
+        document.getElementById('btn-submit-round').disabled = false;
+        // Force a canvas resize after the layout settles
+        setTimeout(() => Drawing.resize(), 50);
+        // Start timer
+        startTimer(st.roundEndsAt);
+        // Wake lock
+        try {
+            if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen');
+        } catch { /* ignore */ }
+        renderMiniStatus();
+    }
+
+    function leaveRound() {
+        if (timerInterval) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+        }
+        if (wakeLock && wakeLock.release) {
+            wakeLock.release().catch(() => {});
+            wakeLock = null;
+        }
+    }
+
+    function startTimer(endsAt) {
+        const el = document.getElementById('round-timer');
+        if (timerInterval) clearInterval(timerInterval);
+        function tick() {
+            const remaining = Math.max(0, Math.ceil((endsAt - Date.now()) / 1000));
+            const m = Math.floor(remaining / 60);
+            const s = remaining % 60;
+            el.textContent = `${m}:${s.toString().padStart(2, '0')}`;
+            el.classList.toggle('is-warning', remaining <= 10 && remaining > 5);
+            el.classList.toggle('is-critical', remaining <= 5);
+            if (remaining === 0 && timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+        }
+        tick();
+        timerInterval = setInterval(tick, 250);
+    }
+
+    function renderMiniStatus() {
+        const st = AppState.get();
+        const holder = document.getElementById('mini-status');
+        holder.innerHTML = '';
+        for (const p of st.players) {
+            const span = document.createElement('span');
+            span.className = 'mini-player';
+            if (st.submitted && st.submitted.has(p.id)) span.classList.add('submitted');
+            span.textContent = `${p.name}${st.submitted && st.submitted.has(p.id) ? ' ✓' : ''}`;
+            holder.appendChild(span);
+        }
+    }
+
+    window.UI = {
+        showScreen, showToast, initLanding, initLobby, renderLobby,
+        initCaller, renderCaller, initRound, enterRound, leaveRound, renderMiniStatus,
+    };
 })();

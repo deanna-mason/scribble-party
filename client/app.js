@@ -45,6 +45,24 @@
                 AppState.set({ randomSuggestion: payload });
                 refresh();
                 break;
+            case 'round_started':
+                AppState.set({
+                    roomState: 'ROUND_ACTIVE',
+                    currentRound: payload.round,
+                    currentPrompt: payload.prompt,
+                    roundEndsAt: payload.endsAt,
+                    submitted: new Set(),
+                });
+                UI.showScreen('ROUND_ACTIVE');
+                UI.enterRound();
+                break;
+            case 'player_submitted': {
+                const s = st.submitted || new Set();
+                s.add(payload.playerId);
+                AppState.set({ submitted: s });
+                UI.renderMiniStatus();
+                break;
+            }
             case 'error':
                 UI.showToast(payload.message || 'Something went wrong');
                 break;
@@ -57,10 +75,12 @@
         UI.initLanding();
         UI.initLobby();
         UI.initCaller();
+        UI.initRound();
         const EVENTS = [
             'room_created', 'room_joined', 'player_joined', 'player_left',
             'player_ready_changed', 'game_started', 'caller_choosing',
-            'random_prompt_suggestion', 'error',
+            'random_prompt_suggestion', 'round_started', 'player_submitted',
+            'error',
         ];
         for (const type of EVENTS) {
             Socket.on(type, (p) => onMessage(type, p));
