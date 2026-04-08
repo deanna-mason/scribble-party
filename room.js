@@ -96,6 +96,60 @@ class Room {
             prompt: text,
         });
     }
+
+    submitRound(playerId, strokes) {
+        if (this.state !== ROOM_STATES.ROUND_ACTIVE) {
+            throw new Error(`Cannot submit from state ${this.state}`);
+        }
+        if (!this.players.has(playerId)) {
+            throw new Error('Unknown player');
+        }
+        if (this.submittedThisRound.has(playerId)) {
+            return; // ignore double-submits
+        }
+        // Replace player's cumulative strokes with what the client sent.
+        // The client is authoritative for its own canvas content.
+        this.playerStrokes.set(playerId, strokes);
+        this.submittedThisRound.add(playerId);
+        const allSubmitted = Array.from(this.players.keys()).every((id) =>
+            this.submittedThisRound.has(id)
+        );
+        if (allSubmitted) {
+            this._transitionToReveal();
+        }
+    }
+
+    forceReveal() {
+        if (this.state !== ROOM_STATES.ROUND_ACTIVE) {
+            throw new Error(`Cannot force reveal from state ${this.state}`);
+        }
+        this._transitionToReveal();
+    }
+
+    _transitionToReveal() {
+        if (this.roundTimer) {
+            clearTimeout(this.roundTimer);
+            this.roundTimer = null;
+        }
+        this.state = ROOM_STATES.REVEAL;
+        this.roundEndsAt = null;
+    }
+
+    nextRound() {
+        if (this.state !== ROOM_STATES.REVEAL) {
+            throw new Error(`Cannot advance from state ${this.state}`);
+        }
+        this.currentCallerIdx = (this.currentCallerIdx + 1) % this.turnOrder.length;
+        this.currentRound += 1;
+        this.currentPrompt = null;
+        this.submittedThisRound.clear();
+        this.state = ROOM_STATES.CALLER_CHOOSING;
+    }
+
+    getNewStrokesForRound(playerId, round) {
+        const all = this.playerStrokes.get(playerId) || [];
+        return all.filter((s) => s.round === round);
+    }
 }
 
 module.exports = { Room, ROOM_STATES };

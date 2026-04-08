@@ -111,3 +111,104 @@ test('setPrompt transitions to ROUND_ACTIVE and sets prompt', () => {
     assert.strictEqual(r.promptHistory.length, 1);
     assert.strictEqual(r.promptHistory[0].prompt, 'fish tail');
 });
+
+function startedRoom(playerCount = 3) {
+    const r = new Room('WXYZ', 'host-1', 'P0');
+    for (let i = 1; i < playerCount; i++) r.addPlayer(`p-${i}`, `P${i}`);
+    r.startGame('host-1');
+    const caller = r.getCurrentCallerId();
+    r.setPrompt(caller, 'fish tail');
+    return r;
+}
+
+test('submitRound records strokes and marks player submitted', () => {
+    const r = startedRoom(3);
+    const strokes = [{ round: 1, tool: 'pen', color: '#000', size: 3, points: [{x: 0.1, y: 0.2}] }];
+    r.submitRound('host-1', strokes);
+    assert.deepStrictEqual(r.playerStrokes.get('host-1'), strokes);
+    assert.ok(r.submittedThisRound.has('host-1'));
+});
+
+test('submitRound does not transition until all have submitted', () => {
+    const r = startedRoom(3);
+    r.submitRound('host-1', []);
+    r.submitRound('p-1', []);
+    assert.strictEqual(r.state, ROOM_STATES.ROUND_ACTIVE);
+});
+
+test('submitRound transitions to REVEAL when all have submitted', () => {
+    const r = startedRoom(3);
+    r.submitRound('host-1', []);
+    r.submitRound('p-1', []);
+    r.submitRound('p-2', []);
+    assert.strictEqual(r.state, ROOM_STATES.REVEAL);
+});
+
+test('submitRound ignores second submission from same player', () => {
+    const r = startedRoom(2);
+    r.submitRound('host-1', [{ round: 1, tool: 'pen', color: '#000', size: 3, points: [] }]);
+    // Second submission should be a no-op
+    r.submitRound('host-1', []);
+    assert.strictEqual(r.playerStrokes.get('host-1').length, 1);
+});
+
+test('submitRound throws if not in ROUND_ACTIVE state', () => {
+    const r = new Room('WXYZ', 'host-1', 'Mom');
+    r.addPlayer('p-2', 'Lily');
+    assert.throws(() => r.submitRound('host-1', []), /state/i);
+});
+
+test('forceReveal transitions to REVEAL even with partial submissions', () => {
+    const r = startedRoom(3);
+    r.submitRound('host-1', []);
+    r.forceReveal();
+    assert.strictEqual(r.state, ROOM_STATES.REVEAL);
+});
+
+test('nextRound rotates caller and returns to CALLER_CHOOSING', () => {
+    const r = startedRoom(3);
+    r.submitRound('host-1', []);
+    r.submitRound('p-1', []);
+    r.submitRound('p-2', []);
+    const firstCaller = r.turnOrder[0];
+    r.nextRound();
+    assert.strictEqual(r.state, ROOM_STATES.CALLER_CHOOSING);
+    assert.strictEqual(r.currentCallerIdx, 1);
+    assert.strictEqual(r.currentRound, 2);
+    assert.notStrictEqual(r.getCurrentCallerId(), firstCaller);
+});
+
+test('nextRound wraps caller back to first player', () => {
+    const r = startedRoom(2);
+    // Round 1: host calls, both submit
+    r.submitRound('host-1', []);
+    r.submitRound('p-1', []);
+    r.nextRound();
+    // Round 2: p-1 calls
+    assert.strictEqual(r.getCurrentCallerId(), 'p-1');
+    r.setPrompt('p-1', 'mustache');
+    r.submitRound('host-1', []);
+    r.submitRound('p-1', []);
+    r.nextRound();
+    // Round 3: back to host
+    assert.strictEqual(r.getCurrentCallerId(), 'host-1');
+    assert.strictEqual(r.currentRound, 3);
+});
+
+test('getNewStrokesForRound returns only strokes from the given round', () => {
+    const r = startedRoom(2);
+    r.submitRound('host-1', [
+        { round: 1, tool: 'pen', color: '#000', size: 3, points: [] },
+    ]);
+    r.submitRound('p-1', []);
+    r.nextRound();
+    r.setPrompt('p-1', 'mustache');
+    r.submitRound('host-1', [
+        { round: 1, tool: 'pen', color: '#000', size: 3, points: [] },
+        { round: 2, tool: 'pen', color: '#f00', size: 3, points: [] },
+    ]);
+    r.submitRound('p-1', []);
+    const newStrokes = r.getNewStrokesForRound('host-1', 2);
+    assert.strictEqual(newStrokes.length, 1);
+    assert.strictEqual(newStrokes[0].round, 2);
+});
