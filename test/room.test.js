@@ -281,3 +281,45 @@ test('newGame throws outside GAME_OVER state', () => {
     const r = startedRoom(2);
     assert.throws(() => r.newGame('host-1'), /state/i);
 });
+
+test('getSnapshot returns full room state for sync', () => {
+    const r = new Room('WXYZ', 'host-1', 'Mom');
+    r.addPlayer('p-2', 'Lily');
+    const snap = r.getSnapshot();
+    assert.strictEqual(snap.code, 'WXYZ');
+    assert.strictEqual(snap.state, ROOM_STATES.LOBBY);
+    assert.strictEqual(snap.hostId, 'host-1');
+    assert.strictEqual(snap.players.length, 2);
+    assert.ok(Array.isArray(snap.turnOrder));
+    assert.ok(typeof snap.playerStrokes === 'object');
+    assert.ok(Array.isArray(snap.promptHistory));
+});
+
+test('getSnapshot players do not include WebSocket reference', () => {
+    const r = new Room('WXYZ', 'host-1', 'Mom');
+    r.players.get('host-1').ws = { foo: 'bar' };
+    const snap = r.getSnapshot();
+    assert.strictEqual(snap.players[0].ws, undefined);
+});
+
+test('markDisconnected sets isConnected=false but keeps player in room', () => {
+    const r = new Room('WXYZ', 'host-1', 'Mom');
+    r.addPlayer('p-2', 'Lily');
+    r.markDisconnected('p-2');
+    assert.strictEqual(r.players.size, 2);
+    assert.strictEqual(r.players.get('p-2').isConnected, false);
+});
+
+test('revivePlayer restores connection on reconnect', () => {
+    const r = new Room('WXYZ', 'host-1', 'Mom');
+    r.addPlayer('p-2', 'Lily');
+    r.markDisconnected('p-2');
+    const ok = r.revivePlayer('p-2');
+    assert.strictEqual(ok, true);
+    assert.strictEqual(r.players.get('p-2').isConnected, true);
+});
+
+test('revivePlayer returns false for unknown playerId', () => {
+    const r = new Room('WXYZ', 'host-1', 'Mom');
+    assert.strictEqual(r.revivePlayer('ghost'), false);
+});

@@ -191,6 +191,41 @@ class Room {
             this.playerStrokes.set(id, []);
         }
     }
+
+    getSnapshot() {
+        return {
+            code: this.code,
+            state: this.state,
+            hostId: this.hostId,
+            players: Array.from(this.players.values()).map((p) => ({
+                id: p.id,
+                name: p.name,
+                isReady: p.isReady,
+                isDoneVoting: p.isDoneVoting,
+                isConnected: p.isConnected,
+            })),
+            turnOrder: [...this.turnOrder],
+            currentCallerIdx: this.currentCallerIdx,
+            currentRound: this.currentRound,
+            currentPrompt: this.currentPrompt,
+            roundEndsAt: this.roundEndsAt,
+            playerStrokes: Object.fromEntries(this.playerStrokes),
+            promptHistory: [...this.promptHistory],
+        };
+    }
+
+    markDisconnected(playerId) {
+        const player = this.players.get(playerId);
+        if (!player) return;
+        player.isConnected = false;
+    }
+
+    revivePlayer(playerId) {
+        const player = this.players.get(playerId);
+        if (!player) return false;
+        player.isConnected = true;
+        return true;
+    }
 }
 
 module.exports = { Room, ROOM_STATES };
