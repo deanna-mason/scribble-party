@@ -410,3 +410,52 @@ input, select { font: inherit; }
     20% { opacity: 1; transform: translate(0, 0) scale(1.2); }
     100% { opacity: 0; transform: translate(0, -40px) scale(1); }
 }
+
+/* ===== Gallery ===== */
+#screen-gallery { overflow-y: auto; }
+.prompt-history {
+    padding: var(--space-md);
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--space-md);
+}
+.prompt-history-label {
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-bottom: var(--space-xs);
+}
+#prompt-history-list {
+    font-weight: 600;
+    line-height: 1.5;
+}
+.gallery-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+}
+.gallery-card {
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+}
+.gallery-card-name {
+    padding: var(--space-sm) var(--space-md);
+    font-weight: 700;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+}
+.gallery-card canvas {
+    display: block;
+    width: 100%;
+    aspect-ratio: 3 / 4;
+    background: white;
+}
+.gallery-actions {
+    display: flex;
+    gap: var(--space-sm);
+    margin-top: var(--space-lg);
+    padding-bottom: var(--space-lg);
+}
+.gallery-actions .btn { flex: 1; }

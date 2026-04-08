@@ -420,9 +420,69 @@
         }
     }
 
+    // ---- Gallery ----
+    function initGallery() {
+        document.getElementById('btn-new-game').addEventListener('click', () => {
+            Socket.send('new_game', {});
+        });
+        document.getElementById('btn-leave-gallery').addEventListener('click', () => {
+            Socket.send('leave_room', {});
+            AppState.reset();
+            showScreen('LANDING');
+        });
+    }
+
+    function enterGallery(payload) {
+        const st = AppState.get();
+        // Prompt history
+        const historyHolder = document.getElementById('prompt-history-list');
+        historyHolder.textContent = payload.promptHistory
+            .map((p) => `"${p.prompt}"`)
+            .join(' → ');
+        // Drawings
+        const list = document.getElementById('gallery-list');
+        list.innerHTML = '';
+        const cells = [];
+        for (const p of st.players) {
+            const card = document.createElement('div');
+            card.className = 'gallery-card';
+            const nameEl = document.createElement('div');
+            nameEl.className = 'gallery-card-name';
+            nameEl.textContent = p.name;
+            const canvas = document.createElement('canvas');
+            card.appendChild(nameEl);
+            card.appendChild(canvas);
+            list.appendChild(card);
+            cells.push({ canvas, playerId: p.id });
+        }
+        // Wait for layout
+        requestAnimationFrame(() => {
+            for (const { canvas, playerId } of cells) {
+                const strokes = payload.finalGallery[playerId] || [];
+                renderFullGallery(canvas, strokes);
+            }
+        });
+    }
+
+    function renderFullGallery(canvas, strokes) {
+        const ctx = canvas.getContext('2d');
+        const rect = canvas.getBoundingClientRect();
+        const w = rect.width;
+        const h = rect.height;
+        const ratio = window.devicePixelRatio || 1;
+        canvas.width = w * ratio;
+        canvas.height = h * ratio;
+        ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+        ctx.clearRect(0, 0, w, h);
+        for (const s of strokes) {
+            Drawing.drawStrokeOn(ctx, s, w, h);
+        }
+    }
+
     window.UI = {
         showScreen, showToast, initLanding, initLobby, renderLobby,
         initCaller, renderCaller, initRound, enterRound, leaveRound, renderMiniStatus,
         initReveal, enterReveal, showReactionOn, renderDoneButton,
+        initGallery, enterGallery,
     };
 })();

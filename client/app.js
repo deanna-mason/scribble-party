@@ -79,6 +79,15 @@
                 UI.renderDoneButton();
                 break;
             }
+            case 'game_ended':
+                AppState.set({ roomState: 'GAME_OVER' });
+                UI.showScreen('GAME_OVER');
+                UI.enterGallery(payload);
+                break;
+            case 'new_game_started':
+                AppState.applySnapshot(payload.state);
+                refresh();
+                break;
             case 'error':
                 UI.showToast(payload.message || 'Something went wrong');
                 break;
@@ -93,11 +102,13 @@
         UI.initCaller();
         UI.initRound();
         UI.initReveal();
+        UI.initGallery();
         const EVENTS = [
             'room_created', 'room_joined', 'player_joined', 'player_left',
             'player_ready_changed', 'game_started', 'caller_choosing',
             'random_prompt_suggestion', 'round_started', 'player_submitted',
             'round_revealed', 'reaction_received', 'done_vote_changed',
+            'game_ended', 'new_game_started',
             'error',
         ];
         for (const type of EVENTS) {
