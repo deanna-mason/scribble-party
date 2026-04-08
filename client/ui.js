@@ -119,5 +119,66 @@
         }[c]));
     }
 
-    window.UI = { showScreen, showToast, initLanding, initLobby, renderLobby };
+    // ---- Caller ----
+    function initCaller() {
+        const promptInput = document.getElementById('input-prompt-text');
+        const confirmBtn = document.getElementById('btn-confirm-prompt');
+        const useBtn = document.getElementById('btn-use-suggestion');
+        const randomBtn = document.getElementById('btn-random-prompt');
+
+        promptInput.addEventListener('input', () => {
+            confirmBtn.disabled = promptInput.value.trim().length === 0;
+        });
+        confirmBtn.addEventListener('click', () => {
+            const text = promptInput.value.trim();
+            if (!text) return;
+            Socket.send('set_prompt', { text });
+        });
+        randomBtn.addEventListener('click', () => {
+            const category = document.getElementById('select-category').value || undefined;
+            Socket.send('request_random_prompt', { category });
+        });
+        useBtn.addEventListener('click', () => {
+            const st = AppState.get();
+            if (!st.randomSuggestion) return;
+            Socket.send('set_prompt', { text: st.randomSuggestion.text });
+        });
+    }
+
+    function renderCaller() {
+        const st = AppState.get();
+        document.getElementById('caller-round').textContent = st.currentRound || 1;
+        const callerId = st.turnOrder[st.currentCallerIdx];
+        const amCaller = callerId === st.playerId;
+        document.getElementById('caller-view-me').classList.toggle('hidden', !amCaller);
+        document.getElementById('caller-view-wait').classList.toggle('hidden', amCaller);
+        if (amCaller) {
+            // Populate categories if not already done
+            const select = document.getElementById('select-category');
+            if (select.options.length === 1 && st.categories) {
+                for (const c of st.categories) {
+                    const opt = document.createElement('option');
+                    opt.value = c;
+                    opt.textContent = c.replace(/_/g, ' ');
+                    select.appendChild(opt);
+                }
+            }
+            const sugg = st.randomSuggestion;
+            const box = document.getElementById('random-suggestion');
+            const text = document.getElementById('random-suggestion-text');
+            if (sugg) {
+                box.classList.remove('hidden');
+                text.textContent = `"${sugg.text}"`;
+            } else {
+                box.classList.add('hidden');
+            }
+            document.getElementById('input-prompt-text').value = '';
+            document.getElementById('btn-confirm-prompt').disabled = true;
+        } else {
+            const caller = st.players.find((p) => p.id === callerId);
+            document.getElementById('caller-wait-name').textContent = caller ? caller.name : 'Someone';
+        }
+    }
+
+    window.UI = { showScreen, showToast, initLanding, initLobby, renderLobby, initCaller, renderCaller };
 })();

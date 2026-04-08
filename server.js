@@ -13,6 +13,7 @@ const ROOM_CLEANUP_MS = 10 * 60 * 1000;
 const app = express();
 app.use(express.static('client'));
 app.get('/health', (req, res) => res.json({ ok: true }));
+app.get('/categories', (req, res) => res.json({ categories: getCategories() }));
 
 const server = app.listen(PORT, () => {
     console.log(`Scribble Party listening on port ${PORT}`);
