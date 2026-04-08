@@ -212,3 +212,72 @@ test('getNewStrokesForRound returns only strokes from the given round', () => {
     assert.strictEqual(newStrokes.length, 1);
     assert.strictEqual(newStrokes[0].round, 2);
 });
+
+test('toggleDoneVoting updates player done state', () => {
+    const r = startedRoom(2);
+    r.submitRound('host-1', []);
+    r.submitRound('p-1', []);
+    // Now in REVEAL
+    r.toggleDoneVoting('host-1', true);
+    assert.strictEqual(r.players.get('host-1').isDoneVoting, true);
+});
+
+test('toggleDoneVoting does not transition while any player has not voted', () => {
+    const r = startedRoom(2);
+    r.submitRound('host-1', []);
+    r.submitRound('p-1', []);
+    r.toggleDoneVoting('host-1', true);
+    assert.strictEqual(r.state, ROOM_STATES.REVEAL);
+});
+
+test('toggleDoneVoting transitions to GAME_OVER when all voted', () => {
+    const r = startedRoom(2);
+    r.submitRound('host-1', []);
+    r.submitRound('p-1', []);
+    r.toggleDoneVoting('host-1', true);
+    r.toggleDoneVoting('p-1', true);
+    assert.strictEqual(r.state, ROOM_STATES.GAME_OVER);
+});
+
+test('toggleDoneVoting can be undone before consensus', () => {
+    const r = startedRoom(2);
+    r.submitRound('host-1', []);
+    r.submitRound('p-1', []);
+    r.toggleDoneVoting('host-1', true);
+    r.toggleDoneVoting('host-1', false);
+    r.toggleDoneVoting('p-1', true);
+    assert.strictEqual(r.state, ROOM_STATES.REVEAL);
+});
+
+test('getDoneVoters returns list of playerIds who voted done', () => {
+    const r = startedRoom(3);
+    r.submitRound('host-1', []);
+    r.submitRound('p-1', []);
+    r.submitRound('p-2', []);
+    r.toggleDoneVoting('host-1', true);
+    r.toggleDoneVoting('p-2', true);
+    const voters = r.getDoneVoters();
+    assert.deepStrictEqual(voters.sort(), ['host-1', 'p-2'].sort());
+});
+
+test('newGame resets state back to LOBBY with same players', () => {
+    const r = startedRoom(2);
+    r.submitRound('host-1', [{ round: 1, tool: 'pen', color: '#000', size: 3, points: [] }]);
+    r.submitRound('p-1', []);
+    r.toggleDoneVoting('host-1', true);
+    r.toggleDoneVoting('p-1', true);
+    // Now in GAME_OVER
+    r.newGame('p-1');
+    assert.strictEqual(r.state, ROOM_STATES.LOBBY);
+    assert.strictEqual(r.hostId, 'p-1');
+    assert.strictEqual(r.players.size, 2);
+    assert.strictEqual(r.currentRound, 0);
+    assert.strictEqual(r.playerStrokes.get('host-1').length, 0);
+    assert.strictEqual(r.players.get('host-1').isReady, false);
+    assert.strictEqual(r.players.get('host-1').isDoneVoting, false);
+});
+
+test('newGame throws outside GAME_OVER state', () => {
+    const r = startedRoom(2);
+    assert.throws(() => r.newGame('host-1'), /state/i);
+});

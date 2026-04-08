@@ -150,6 +150,47 @@ class Room {
         const all = this.playerStrokes.get(playerId) || [];
         return all.filter((s) => s.round === round);
     }
+
+    toggleDoneVoting(playerId, done) {
+        const player = this.players.get(playerId);
+        if (!player) throw new Error('Unknown player');
+        player.isDoneVoting = done;
+        const allDone = Array.from(this.players.values()).every((p) => p.isDoneVoting);
+        if (allDone) {
+            this.state = ROOM_STATES.GAME_OVER;
+        }
+    }
+
+    getDoneVoters() {
+        return Array.from(this.players.values())
+            .filter((p) => p.isDoneVoting)
+            .map((p) => p.id);
+    }
+
+    newGame(newHostId) {
+        if (this.state !== ROOM_STATES.GAME_OVER) {
+            throw new Error(`Cannot start new game from state ${this.state}`);
+        }
+        if (!this.players.has(newHostId)) {
+            throw new Error('Unknown player');
+        }
+        this.state = ROOM_STATES.LOBBY;
+        this.hostId = newHostId;
+        this.turnOrder = [];
+        this.currentCallerIdx = 0;
+        this.currentRound = 0;
+        this.currentPrompt = null;
+        this.roundEndsAt = null;
+        this.submittedThisRound.clear();
+        this.promptHistory = [];
+        for (const player of this.players.values()) {
+            player.isReady = false;
+            player.isDoneVoting = false;
+        }
+        for (const id of this.playerStrokes.keys()) {
+            this.playerStrokes.set(id, []);
+        }
+    }
 }
 
 module.exports = { Room, ROOM_STATES };
