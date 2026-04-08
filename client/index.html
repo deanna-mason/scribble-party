@@ -4,9 +4,147 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Scribble Party</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <h1>Scribble Party</h1>
-    <p>Loading...</p>
+    <div id="toast-container" aria-live="polite"></div>
+
+    <!-- Landing -->
+    <section id="screen-landing" class="screen is-active">
+        <div class="landing-card">
+            <h1 class="landing-title">✏️ Scribble Party</h1>
+            <p class="landing-sub">Draw silly things with your friends!</p>
+            <button id="btn-show-create" class="btn btn-primary">Create New Room</button>
+            <button id="btn-show-join" class="btn btn-secondary">Join a Room</button>
+            <form id="form-create" class="inline-form hidden" autocomplete="off">
+                <input id="input-create-name" type="text" placeholder="Your name" maxlength="16" required>
+                <button type="submit" class="btn btn-primary">Create</button>
+            </form>
+            <form id="form-join" class="inline-form hidden" autocomplete="off">
+                <input id="input-join-code" type="text" placeholder="Room code" maxlength="4" required style="text-transform:uppercase">
+                <input id="input-join-name" type="text" placeholder="Your name" maxlength="16" required>
+                <button type="submit" class="btn btn-primary">Join</button>
+            </form>
+        </div>
+    </section>
+
+    <!-- Lobby -->
+    <section id="screen-lobby" class="screen">
+        <header class="app-header">
+            <button id="btn-leave-lobby" class="btn-link">← Leave</button>
+        </header>
+        <div class="lobby-card">
+            <div class="room-code-block">
+                <div class="room-code-label">Room code</div>
+                <button id="btn-copy-code" class="room-code" title="Tap to copy">WXYZ</button>
+                <div class="room-code-hint">Tap to copy</div>
+            </div>
+            <h2 class="lobby-section-title">Players <span id="lobby-count">(0/8)</span></h2>
+            <ul id="lobby-players" class="player-list"></ul>
+            <div class="lobby-actions">
+                <button id="btn-ready" class="btn btn-secondary">I'm Ready</button>
+                <button id="btn-start-game" class="btn btn-primary" disabled>Start Game</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Caller choosing -->
+    <section id="screen-caller" class="screen">
+        <header class="app-header">
+            <div class="round-label">Round <span id="caller-round">1</span></div>
+        </header>
+        <div id="caller-view-me" class="caller-card hidden">
+            <h2>Your turn!</h2>
+            <p>Pick a prompt for everyone</p>
+            <input id="input-prompt-text" type="text" placeholder="Type anything..." maxlength="40">
+            <div class="caller-or">— or —</div>
+            <div class="caller-random-row">
+                <select id="select-category">
+                    <option value="">Any category</option>
+                </select>
+                <button id="btn-random-prompt" class="btn btn-secondary">🎲 Surprise me</button>
+            </div>
+            <div id="random-suggestion" class="random-suggestion hidden">
+                <div id="random-suggestion-text"></div>
+                <button id="btn-use-suggestion" class="btn btn-primary">Use this</button>
+            </div>
+            <button id="btn-confirm-prompt" class="btn btn-primary" disabled>Confirm</button>
+        </div>
+        <div id="caller-view-wait" class="caller-wait hidden">
+            <p><span id="caller-wait-name">Someone</span> is picking a prompt...</p>
+            <div class="spinner">⏳</div>
+        </div>
+    </section>
+
+    <!-- Drawing round -->
+    <section id="screen-round" class="screen">
+        <header class="round-header">
+            <div class="round-label">Round <span id="round-number">1</span></div>
+            <div class="round-timer" id="round-timer">1:30</div>
+        </header>
+        <div class="round-prompt" id="round-prompt">"fish tail"</div>
+        <div class="canvas-wrap">
+            <canvas id="draw-canvas"></canvas>
+        </div>
+        <div class="toolbar">
+            <div class="toolbar-group">
+                <button class="tool-btn is-active" data-tool="pen" aria-label="Pen">✏️</button>
+                <button class="tool-btn" data-tool="eraser" aria-label="Eraser">🧹</button>
+            </div>
+            <div class="toolbar-group" id="color-swatches"></div>
+            <div class="toolbar-group" id="size-buttons">
+                <button class="size-btn is-active" data-size="3" aria-label="Small"><span class="size-dot small"></span></button>
+                <button class="size-btn" data-size="6" aria-label="Medium"><span class="size-dot medium"></span></button>
+                <button class="size-btn" data-size="10" aria-label="Large"><span class="size-dot large"></span></button>
+            </div>
+        </div>
+        <div class="mini-status" id="mini-status"></div>
+        <button id="btn-submit-round" class="btn btn-primary btn-full">Submit</button>
+    </section>
+
+    <!-- Reveal -->
+    <section id="screen-reveal" class="screen">
+        <header class="app-header">
+            <div class="reveal-title">Round <span id="reveal-round">1</span> Reveal</div>
+            <div class="reveal-prompt" id="reveal-prompt">"fish tail"</div>
+        </header>
+        <div class="reveal-grid" id="reveal-grid"></div>
+        <div class="reaction-bar" id="reaction-bar">
+            <button class="emoji-btn" data-emoji="🎉">🎉</button>
+            <button class="emoji-btn" data-emoji="😂">😂</button>
+            <button class="emoji-btn" data-emoji="🔥">🔥</button>
+            <button class="emoji-btn" data-emoji="❤️">❤️</button>
+            <button class="emoji-btn" data-emoji="😱">😱</button>
+        </div>
+        <div class="reveal-actions">
+            <button id="btn-next-round" class="btn btn-primary">Next Round →</button>
+            <div class="done-block">
+                <button id="btn-toggle-done" class="btn btn-secondary btn-done">🏁 I'm done <span class="done-state">○</span></button>
+                <div class="done-helper" id="done-helper">Game ends when everyone taps this</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Gallery -->
+    <section id="screen-gallery" class="screen">
+        <header class="app-header">
+            <h1>Our Masterpieces</h1>
+        </header>
+        <div class="prompt-history">
+            <div class="prompt-history-label">All the prompts:</div>
+            <div id="prompt-history-list"></div>
+        </div>
+        <div id="gallery-list" class="gallery-list"></div>
+        <div class="gallery-actions">
+            <button id="btn-new-game" class="btn btn-primary">New Game</button>
+            <button id="btn-leave-gallery" class="btn btn-secondary">Leave</button>
+        </div>
+    </section>
+
+    <script src="socket.js"></script>
+    <script src="state.js"></script>
+    <script src="drawing.js"></script>
+    <script src="ui.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>
