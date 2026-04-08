@@ -27,6 +27,9 @@
     function resize() {
         if (!canvas) return;
         const rect = canvas.getBoundingClientRect();
+        // If the canvas has no layout yet (e.g. its screen is still display:none
+        // at page load), bail out rather than zero out a potentially working canvas.
+        if (rect.width === 0 || rect.height === 0) return;
         cssWidth = rect.width;
         cssHeight = rect.height;
         const ratio = window.devicePixelRatio || 1;
@@ -53,6 +56,9 @@
     }
 
     function onPointerDown(e) {
+        // Safety: if the canvas wasn't laid out when init/resize ran, pick up
+        // real dimensions now before we try to draw anything.
+        if (cssWidth === 0 || cssHeight === 0) resize();
         e.preventDefault();
         canvas.setPointerCapture(e.pointerId);
         const point = normalizedPoint(e);

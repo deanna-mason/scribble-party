@@ -237,12 +237,17 @@
         document.getElementById('round-number').textContent = st.currentRound;
         document.getElementById('round-prompt').textContent = `"${st.currentPrompt}"`;
         Drawing.setRound(st.currentRound);
-        // Load cumulative strokes for me from state
+        document.getElementById('btn-submit-round').disabled = false;
+        // Wait for the screen transition + layout before sizing the canvas.
+        // Without this, the canvas has 0x0 dimensions because it was hidden
+        // at page load and the layout hasn't settled yet immediately after
+        // showScreen() toggled its visibility.
+        await new Promise((r) => requestAnimationFrame(r));
+        await new Promise((r) => requestAnimationFrame(r));
+        Drawing.resize();
+        // Now load cumulative strokes — rerender uses the freshly sized canvas.
         const myStrokes = (st.playerStrokes[st.playerId] || []).slice();
         Drawing.setStrokes(myStrokes);
-        document.getElementById('btn-submit-round').disabled = false;
-        // Force a canvas resize after the layout settles
-        setTimeout(() => Drawing.resize(), 50);
         // Start timer
         startTimer(st.roundEndsAt);
         // Wake lock
