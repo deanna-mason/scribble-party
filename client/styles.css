@@ -335,6 +335,7 @@ input, select { font: inherit; }
 .reveal-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
+    grid-auto-rows: 1fr;
     gap: var(--space-sm);
     flex: 1;
     min-height: 0;

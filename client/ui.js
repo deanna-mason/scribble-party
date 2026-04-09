@@ -367,7 +367,8 @@
             cells.push({ canvas, playerId: p.id });
         }
 
-        // Wait one frame so cells have layout
+        // Wait two frames so cells have layout after the screen transition
+        await new Promise((r) => requestAnimationFrame(r));
         await new Promise((r) => requestAnimationFrame(r));
         // Replay strokes on each cell
         await Promise.all(cells.map(({ canvas, playerId }) => {

@@ -232,7 +232,11 @@ function handleStartGame(ws) {
         currentCallerIdx: room.currentCallerIdx,
         currentRound: room.currentRound,
     });
-    broadcast(room, MESSAGE_TYPES.CALLER_CHOOSING, { callerId: room.getCurrentCallerId() });
+    broadcast(room, MESSAGE_TYPES.CALLER_CHOOSING, {
+        callerId: room.getCurrentCallerId(),
+        callerIdx: room.currentCallerIdx,
+        round: room.currentRound,
+    });
 }
 
 function handleRequestRandom(ws, { category }) {
@@ -296,7 +300,11 @@ function handleNextRound(ws) {
     } catch (e) {
         return sendError(ws, 'INVALID_STATE', e.message);
     }
-    broadcast(room, MESSAGE_TYPES.CALLER_CHOOSING, { callerId: room.getCurrentCallerId() });
+    broadcast(room, MESSAGE_TYPES.CALLER_CHOOSING, {
+        callerId: room.getCurrentCallerId(),
+        callerIdx: room.currentCallerIdx,
+        round: room.currentRound,
+    });
 }
 
 function handleToggleDone(ws, { done }) {

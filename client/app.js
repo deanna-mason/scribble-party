@@ -38,7 +38,16 @@
                 refresh();
                 break;
             case 'caller_choosing':
-                AppState.set({ roomState: 'CALLER_CHOOSING', randomSuggestion: null });
+                AppState.set({
+                    roomState: 'CALLER_CHOOSING',
+                    currentCallerIdx: typeof payload.callerIdx === 'number'
+                        ? payload.callerIdx
+                        : st.currentCallerIdx,
+                    currentRound: typeof payload.round === 'number'
+                        ? payload.round
+                        : st.currentRound,
+                    randomSuggestion: null,
+                });
                 refresh();
                 break;
             case 'random_prompt_suggestion':
