@@ -19,15 +19,18 @@
         canvas = canvasEl;
         ctx = canvas.getContext('2d');
         canvas.style.touchAction = 'none';
+        canvas.style.display = 'block';
         resize();
         attachListeners();
-        // ResizeObserver catches every layout-driven size change (window resize,
-        // toolbar wrap, font load, scrollbar appearing, etc.) — not just window
-        // resize events. This keeps canvas.width/height in sync with the actual
-        // CSS box no matter what triggered the change.
-        if (typeof ResizeObserver !== 'undefined') {
+        // Observe the PARENT (.canvas-wrap). When the flex column reallocates
+        // vertical space (toolbar wraps, window resizes, font loads), the
+        // parent resizes and we snap the canvas to exactly match its inner box.
+        // Observing the canvas itself wouldn't help — we want to drive the
+        // canvas size FROM the parent, not react to the canvas's own changes.
+        const parent = canvas.parentElement;
+        if (parent && typeof ResizeObserver !== 'undefined') {
             const ro = new ResizeObserver(() => resize());
-            ro.observe(canvas);
+            ro.observe(parent);
         } else {
             window.addEventListener('resize', resize);
         }
@@ -35,17 +38,34 @@
 
     function resize() {
         if (!canvas) return;
-        const rect = canvas.getBoundingClientRect();
-        // If the canvas has no layout yet (e.g. its screen is still display:none
-        // at page load), bail out rather than zero out a potentially working canvas.
-        if (rect.width === 0 || rect.height === 0) return;
-        cssWidth = rect.width;
-        cssHeight = rect.height;
+        const parent = canvas.parentElement;
+        if (!parent) return;
+        // clientWidth/clientHeight is the parent's inner content box, excluding
+        // border and scrollbars. This gives the drawable area exactly inside
+        // the visible outline on .canvas-wrap.
+        const w = parent.clientWidth;
+        const h = parent.clientHeight;
+        if (w === 0 || h === 0) return;
+        cssWidth = w;
+        cssHeight = h;
+        // Explicitly size the canvas in CSS pixels (no more width: 100%).
+        canvas.style.width = cssWidth + 'px';
+        canvas.style.height = cssHeight + 'px';
         const ratio = window.devicePixelRatio || 1;
         canvas.width = cssWidth * ratio;
         canvas.height = cssHeight * ratio;
         ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
         rerender();
+    }
+
+    function clearBitmap() {
+        if (!ctx || !canvas) return;
+        // Reset the transform to identity so clearRect uses the raw bitmap
+        // dimensions regardless of the current DPR scale transform.
+        ctx.save();
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.restore();
     }
 
     function attachListeners() {
@@ -295,7 +315,7 @@
 
     window.Drawing = {
         COLORS, SIZES, init, resize, setTool, setColor, setSize, setRound,
-        setStrokes, getStrokes, clearCurrentRound, onChange, rerender,
-        replayOn, drawStrokeOn,
+        setStrokes, getStrokes, clearCurrentRound, clearBitmap,
+        onChange, rerender, replayOn, drawStrokeOn,
     };
 })();

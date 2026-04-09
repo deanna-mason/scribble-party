@@ -8,6 +8,10 @@ const { getRandomPrompt, getCategories } = require('./prompts');
 
 const PORT = process.env.PORT || 3000;
 const ROUND_DURATION_MS = 90_000;
+// Extra server-side grace period before force-revealing so client
+// auto-submissions (which fire ~1s before the nominal end) and any
+// late-arriving network packets land in time.
+const ROUND_GRACE_MS = 3_000;
 const ROOM_CLEANUP_MS = 10 * 60 * 1000;
 
 const app = express();
@@ -68,7 +72,7 @@ function scheduleRoundTimer(room) {
                 console.error('forceReveal failed:', err);
             }
         }
-    }, ROUND_DURATION_MS);
+    }, ROUND_DURATION_MS + ROUND_GRACE_MS);
 }
 
 function sendRevealBroadcast(room) {

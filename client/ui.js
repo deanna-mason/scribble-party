@@ -263,17 +263,21 @@
         document.getElementById('round-prompt').textContent = `"${st.currentPrompt}"`;
         Drawing.setRound(st.currentRound);
         document.getElementById('btn-submit-round').disabled = false;
+        // Load the correct strokes for THIS round FIRST, so Drawing's
+        // internal state is fresh before any render runs. Otherwise the
+        // first rerender (from resize()) would flash the previous game's
+        // strokes that are still in the module-level strokes array.
+        const myStrokes = (st.playerStrokes[st.playerId] || []).slice();
+        Drawing.setStrokes(myStrokes);
+        // Also wipe any stale pixels still in the canvas bitmap from a
+        // previous game — setStrokes only clears via rerender which uses
+        // cached dimensions that may be 0 at this point.
+        Drawing.clearBitmap();
         // Wait for the screen transition + layout before sizing the canvas.
-        // Without this, the canvas has 0x0 dimensions because it was hidden
-        // at page load and the layout hasn't settled yet immediately after
-        // showScreen() toggled its visibility.
         await new Promise((r) => requestAnimationFrame(r));
         await new Promise((r) => requestAnimationFrame(r));
         Drawing.resize();
-        // Now load cumulative strokes — rerender uses the freshly sized canvas.
-        const myStrokes = (st.playerStrokes[st.playerId] || []).slice();
-        Drawing.setStrokes(myStrokes);
-        // Start timer
+        // Start timer (also sets up auto-submit when time is nearly up)
         startTimer(st.roundEndsAt);
         // Wake lock
         try {
@@ -296,13 +300,27 @@
     function startTimer(endsAt) {
         const el = document.getElementById('round-timer');
         if (timerInterval) clearInterval(timerInterval);
+        let autoSubmitted = false;
         function tick() {
-            const remaining = Math.max(0, Math.ceil((endsAt - Date.now()) / 1000));
+            const now = Date.now();
+            const remaining = Math.max(0, Math.ceil((endsAt - now) / 1000));
             const m = Math.floor(remaining / 60);
             const s = remaining % 60;
             el.textContent = `${m}:${s.toString().padStart(2, '0')}`;
             el.classList.toggle('is-warning', remaining <= 10 && remaining > 5);
             el.classList.toggle('is-critical', remaining <= 5);
+            // Auto-submit ~1 second before the nominal end so we beat the
+            // server's force-reveal timeout and the drawing actually makes
+            // it into the reveal (otherwise a slow-to-tap user loses their
+            // whole round).
+            if (!autoSubmitted && now >= endsAt - 1000) {
+                autoSubmitted = true;
+                const btn = document.getElementById('btn-submit-round');
+                if (btn && !btn.disabled) {
+                    Socket.send('submit_round', { strokes: Drawing.getStrokes() });
+                    btn.disabled = true;
+                }
+            }
             if (remaining === 0 && timerInterval) {
                 clearInterval(timerInterval);
                 timerInterval = null;

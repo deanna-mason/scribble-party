@@ -291,9 +291,10 @@ input, select { font: inherit; }
     box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.6);
 }
 #draw-canvas {
-    width: 100%;
-    height: 100%;
     display: block;
+    /* Width and height are set explicitly in Drawing.resize() to exactly
+       match the parent's content box, so the drawable area equals the
+       visible outline. Do not use percentage sizing here. */
 }
 .toolbar {
     display: flex;
