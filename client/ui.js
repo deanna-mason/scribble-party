@@ -104,13 +104,38 @@
         const btnReady = document.getElementById('btn-ready');
         if (me) {
             btnReady.textContent = me.isReady ? '✓ Ready' : "I'm Ready";
-            btnReady.classList.toggle('is-active', me.isReady);
+            // Primary (coral filled) when action is needed; secondary once done.
+            btnReady.className = me.isReady ? 'btn btn-secondary' : 'btn btn-primary';
         }
         const btnStart = document.getElementById('btn-start-game');
         const isHost = st.playerId === st.hostId;
         const canStart = isHost && st.players.length >= 2;
         btnStart.style.display = isHost ? '' : 'none';
         btnStart.disabled = !canStart;
+
+        // Contextual hint so joining players know what to do next.
+        const hint = document.getElementById('lobby-hint');
+        if (hint && me) {
+            if (!me.isReady) {
+                hint.innerHTML = "Tap <strong>I'm Ready</strong> to join the game";
+            } else if (isHost) {
+                const notReady = st.players.filter((p) => !p.isReady).map((p) => p.name);
+                if (st.players.length < 2) {
+                    hint.innerHTML = "Share the room code &mdash; you need at least 2 players";
+                } else if (notReady.length === 0) {
+                    hint.innerHTML = "Everyone's ready! Tap <strong>Start Game</strong>";
+                } else {
+                    hint.textContent = `Waiting for ${notReady.join(', ')} to be ready...`;
+                }
+            } else {
+                const notReady = st.players.filter((p) => !p.isReady).map((p) => p.name);
+                if (notReady.length === 0) {
+                    hint.textContent = 'Waiting for the host to start the game...';
+                } else {
+                    hint.textContent = `Waiting for ${notReady.join(', ')}...`;
+                }
+            }
+        }
     }
 
     function escapeHtml(s) {

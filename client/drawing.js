@@ -21,7 +21,16 @@
         canvas.style.touchAction = 'none';
         resize();
         attachListeners();
-        window.addEventListener('resize', resize);
+        // ResizeObserver catches every layout-driven size change (window resize,
+        // toolbar wrap, font load, scrollbar appearing, etc.) — not just window
+        // resize events. This keeps canvas.width/height in sync with the actual
+        // CSS box no matter what triggered the change.
+        if (typeof ResizeObserver !== 'undefined') {
+            const ro = new ResizeObserver(() => resize());
+            ro.observe(canvas);
+        } else {
+            window.addEventListener('resize', resize);
+        }
     }
 
     function resize() {
