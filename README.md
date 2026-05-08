@@ -6,6 +6,8 @@ One player at a time calls out a prompt — *"fish tail!"*, *"lightning bolt!"*,
 
 Built as the WebSocket assignment for *6100 MultiTier App Development*.
 
+**Live demo:** <https://scribbleparty.onrender.com/>
+
 ## Overview
 
 - **2–8 players** join a room with a 4-letter code
@@ -125,7 +127,9 @@ scribble party/
 
 ## Deployment
 
-Deployed to **Render.com** as a Web Service (free tier).
+Live at **<https://scribbleparty.onrender.com/>**, deployed on Render.com as a Web Service (free tier).
+
+To deploy your own:
 
 1. Push to a GitHub repo
 2. Connect Render to the repo
