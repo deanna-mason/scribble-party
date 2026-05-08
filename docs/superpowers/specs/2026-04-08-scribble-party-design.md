@@ -1,7 +1,6 @@
 # Scribble Party — Design Document
 
 **Date:** 2026-04-08
-**Author:** Deanna Mason
 **Course:** 6100 MultiTier App Development
 **Status:** Approved, ready for implementation plan
 
