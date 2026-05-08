@@ -1,3 +1,5 @@
+//This uses the same IIFE pattern as server.js to keep variables private. This holds all the client-side state information.
+
 (function () {
     const STORAGE_KEY = 'scribble-party-playerId';
 
@@ -5,7 +7,7 @@
         // Connection
         connected: false,
         // Identity
-        playerId: localStorage.getItem(STORAGE_KEY) || null,
+        playerId: localStorage.getItem(STORAGE_KEY) || null, //this allows player to reconnect with the same identity if they get disconnected.
         // Room
         roomCode: null,
         roomState: 'LANDING', // LANDING | LOBBY | CALLER_CHOOSING | ROUND_ACTIVE | REVEAL | GAME_OVER
@@ -23,8 +25,6 @@
         haveSeenDoneHelper: false,
     };
 
-    const listeners = new Set();
-
     function get() { return state; }
 
     function set(patch) {
@@ -32,9 +32,9 @@
         if (patch.playerId !== undefined && patch.playerId) {
             localStorage.setItem(STORAGE_KEY, patch.playerId);
         }
-        for (const cb of listeners) cb(state);
     }
 
+    //takes a full room snapshot from the server and applies it all at once. Used when joining, reconnecting, or a new game start. Full room replacement.
     function applySnapshot(snapshot) {
         set({
             roomCode: snapshot.code,
@@ -51,11 +51,7 @@
         });
     }
 
-    function subscribe(cb) {
-        listeners.add(cb);
-        return () => listeners.delete(cb);
-    }
-
+    //keeps your identity but resets all room-related state. This is called when you leave a room or start a new game.
     function reset() {
         set({
             roomCode: null,
@@ -74,5 +70,5 @@
         });
     }
 
-    window.AppState = { get, set, applySnapshot, subscribe, reset };
+    window.AppState = { get, set, applySnapshot, reset };
 })();

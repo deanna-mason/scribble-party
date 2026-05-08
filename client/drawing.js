@@ -13,7 +13,7 @@
     // playerStrokes for the local player. Server holds the canonical copy.
     let strokes = [];
     let currentStroke = null;
-    let listeners = { onStrokeChange: () => {} };
+    let listeners = { onStrokeChange: () => { } };
 
     function init(canvasEl) {
         canvas = canvasEl;
@@ -22,11 +22,9 @@
         canvas.style.display = 'block';
         resize();
         attachListeners();
-        // Observe the PARENT (.canvas-wrap). When the flex column reallocates
-        // vertical space (toolbar wraps, window resizes, font loads), the
-        // parent resizes and we snap the canvas to exactly match its inner box.
-        // Observing the canvas itself wouldn't help — we want to drive the
-        // canvas size FROM the parent, not react to the canvas's own changes.
+
+        //  When the flex column reallocates vertical space (toolbar wraps, window resizes, font loads), the
+        // parent resizes and the canvas snaps to match its inner box. 
         const parent = canvas.parentElement;
         if (parent && typeof ResizeObserver !== 'undefined') {
             const ro = new ResizeObserver(() => resize());
@@ -40,9 +38,9 @@
         if (!canvas) return;
         const parent = canvas.parentElement;
         if (!parent) return;
-        // clientWidth/clientHeight is the parent's inner content box, excluding
-        // border and scrollbars. This gives the drawable area exactly inside
-        // the visible outline on .canvas-wrap.
+
+        // clientWidth/clientHeight is the parent's inner content box, excluding border and scrollbars. 
+        // This gives the drawable area exactly inside the visible outline on .canvas-wrap.
         const w = parent.clientWidth;
         const h = parent.clientHeight;
         if (w === 0 || h === 0) return;
@@ -60,8 +58,7 @@
 
     function clearBitmap() {
         if (!ctx || !canvas) return;
-        // Reset the transform to identity so clearRect uses the raw bitmap
-        // dimensions regardless of the current DPR scale transform.
+        // Reset the transform to identity so clearRect uses the raw bitmap dimensions regardless of the current DPR scale transform.
         ctx.save();
         ctx.setTransform(1, 0, 0, 1, 0, 0);
         ctx.clearRect(0, 0, canvas.width, canvas.height);

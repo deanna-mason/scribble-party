@@ -292,7 +292,7 @@
             timerInterval = null;
         }
         if (wakeLock && wakeLock.release) {
-            wakeLock.release().catch(() => {});
+            wakeLock.release().catch(() => { });
             wakeLock = null;
         }
     }
@@ -421,7 +421,7 @@
         }));
 
         // Merge new strokes into AppState.playerStrokes.
-        // For self, pull directly from Drawing (source of truth for our own canvas)
+        // For self, pull directly from Drawing (source of truth for your own canvas)
         // to avoid duplicating strokes we already have locally.
         const updated = { ...st.playerStrokes };
         for (const [pid, newStrokes] of Object.entries(revealPayload.playerStrokesThisRound)) {

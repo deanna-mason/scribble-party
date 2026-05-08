@@ -1,3 +1,6 @@
+//This file handles helping a player get a random prompt to draw. 
+// It can also return a prompt from a specific category and will exclude previously given prompts for that game.
+
 const path = require('path');
 const fs = require('fs');
 

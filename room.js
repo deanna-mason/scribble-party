@@ -1,3 +1,4 @@
+//These are all the states that a room can be in.
 const ROOM_STATES = Object.freeze({
     LOBBY: 'LOBBY',
     CALLER_CHOOSING: 'CALLER_CHOOSING',
@@ -8,9 +9,10 @@ const ROOM_STATES = Object.freeze({
 
 const MAX_PLAYERS = 8;
 
+//This defines the Room class, which has all the game logic and states for a single game room. 
 class Room {
-    constructor(code, hostId, hostName) {
-        this.code = code;
+    constructor(code, hostId, hostName) {  //initalizes the state of the room when it's created.
+        this.code = code;  //the four letter room code
         this.state = ROOM_STATES.LOBBY;
         this.hostId = hostId;
         this.players = new Map();
@@ -19,8 +21,8 @@ class Room {
         this.currentRound = 0;
         this.currentPrompt = null;
         this.roundEndsAt = null;
-        this.submittedThisRound = new Set();
-        this.playerStrokes = new Map();
+        this.submittedThisRound = new Set();  //tracks which players have submitted their drawings for this round.
+        this.playerStrokes = new Map();  //maps playerID to an array of all their drawing strokes for the current game.
         this.promptHistory = [];
         this.roundTimer = null;
         if (hostId && hostName) {
@@ -43,7 +45,7 @@ class Room {
             isConnected: true,
             joinedAt: Date.now(),
         });
-        this.playerStrokes.set(playerId, []);
+        this.playerStrokes.set(playerId, []); // initialize empty strokes for this player
     }
 
     removePlayer(playerId) {
@@ -119,6 +121,7 @@ class Room {
         }
     }
 
+    //server calls this when the timer runs out for the round.
     forceReveal() {
         if (this.state !== ROOM_STATES.ROUND_ACTIVE) {
             throw new Error(`Cannot force reveal from state ${this.state}`);
@@ -139,7 +142,7 @@ class Room {
         if (this.state !== ROOM_STATES.REVEAL) {
             throw new Error(`Cannot advance from state ${this.state}`);
         }
-        this.currentCallerIdx = (this.currentCallerIdx + 1) % this.turnOrder.length;
+        this.currentCallerIdx = (this.currentCallerIdx + 1) % this.turnOrder.length;  //goes to next prompt caller. Wraps around to the beginning if needed.
         this.currentRound += 1;
         this.currentPrompt = null;
         this.submittedThisRound.clear();
@@ -161,12 +164,14 @@ class Room {
         }
     }
 
+    //returns an array of playerIDs who said they were done with the current game.
     getDoneVoters() {
         return Array.from(this.players.values())
             .filter((p) => p.isDoneVoting)
             .map((p) => p.id);
     }
 
+    //starts a new game after current game is over with the same players.
     newGame(newHostId) {
         if (this.state !== ROOM_STATES.GAME_OVER) {
             throw new Error(`Cannot start new game from state ${this.state}`);
@@ -192,6 +197,7 @@ class Room {
         }
     }
 
+    //new or reconnecting players sync up with this to get the current state of the room and game.
     getSnapshot() {
         return {
             code: this.code,

@@ -1,3 +1,5 @@
+//This manages individual game rooms.
+
 const { Room } = require('./room');
 
 function randomCode() {
@@ -11,7 +13,7 @@ function randomCode() {
 
 class RoomManager {
     constructor() {
-        this.rooms = new Map();
+        this.rooms = new Map();  //holds a map of room codes to Room instances.
     }
 
     createRoom(hostId, hostName) {

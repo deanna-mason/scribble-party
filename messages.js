@@ -1,3 +1,4 @@
+//A list of all the messages that can be sent between the client and server, along with validation logic.
 const MESSAGE_TYPES = Object.freeze({
     // Client → server
     CREATE_ROOM: 'create_room',
@@ -31,8 +32,7 @@ const MESSAGE_TYPES = Object.freeze({
     ERROR: 'error',
 });
 
-// Schema is a map of field name → expected type.
-// Use "array" for arrays; use "optional:string" for optional strings.
+// Defines what each message type needs to look like.
 const SCHEMAS = {
     create_room: { name: 'string' },
     join_room: { code: 'string', name: 'string', playerId: 'optional:string' },
@@ -48,6 +48,7 @@ const SCHEMAS = {
     leave_room: {},
 };
 
+//Validation gets called on every incoming Websocket message (server.js 102). Checks type and payload against the above schemas.
 function validate(type, payload) {
     const schema = SCHEMAS[type];
     if (!schema) return [false, `unknown message type: ${type}`];
